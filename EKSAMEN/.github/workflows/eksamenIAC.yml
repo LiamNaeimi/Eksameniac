@@ -1,0 +1,51 @@
+name: Terraform CI/CD Pipeline
+
+
+on:
+  push:
+    branches:
+      - main      
+  pull_request:
+    branches:
+      - main      
+
+jobs:
+  terraform:
+    runs-on: ubuntu-latest 
+     env:  
+      ARM_CLIENT_ID: ${{ secrets.ARM_CLIENT_ID }}
+      ARM_CLIENT_SECRET: ${{ secrets.ARM_CLIENT_SECRET }}
+      ARM_SUBSCRIPTION_ID: ${{ secrets.ARM_SUBSCRIPTION_ID }}
+      ARM_TENANT_ID: ${{ secrets.ARM_TENANT_ID }}
+    steps:
+      # Steg 1: Checkout av koden
+      - name: Checkout code
+        uses: actions/checkout@v2
+
+      # Steg 2: Sett opp Terraform
+      - name: Set up Terraform
+        uses: hashicorp/setup-terraform@v1
+        with:
+          terraform_version: '1.3.6' 
+
+      # Steg 3: Kjør Terraform Init for å initialisere prosjektet
+      - name: Terraform Init
+        run: terraform init
+
+      # Steg 4: Kjør Terraform Validate for å sjekke om konfigurasjonen er riktig
+      - name: Terraform Validate
+        run: terraform validate
+
+      # Steg 5: Kjør Terraform Plan for å vise hva som vil bli endret i infrastrukturen
+      - name: Terraform Plan
+        run: terraform plan -out=tfplan
+
+      # Steg 6: Kjør Terraform Apply
+      - name: Terraform Apply
+        if: github.ref == 'refs/heads/main'
+        run: terraform apply -auto-approve tfplan
+
+      # Steg 7: Lagre output og status
+      - name: Save Terraform Plan Output
+        run: terraform show tfplan
+        
